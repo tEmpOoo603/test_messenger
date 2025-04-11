@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from sqlalchemy import Enum as SQLEnam, ForeignKey, Integer, Text, func
+from sqlalchemy import Enum as SQLEnam, ForeignKey, Integer, Text, func, UUID
 from sqlalchemy.dialects.postgresql import ARRAY, TIMESTAMP
 
 from sqlalchemy.orm import declarative_base, Mapped, mapped_column
@@ -11,6 +11,7 @@ Base = declarative_base()
 class User(Base):
     __tablename__ = "users"
     id: Mapped[int] = mapped_column(primary_key=True)
+    uuid: Mapped[UUID] = mapped_column(UUID(as_uuid=True), default=func.uuid_generate_v4())
     name: Mapped[str]
     email: Mapped[str] = mapped_column(unique=True)
     password: Mapped[str]
@@ -35,7 +36,7 @@ class Group(Base):
     __tablename__ = "groups"
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str]
-    creator_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    creator_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
     participants: Mapped[list[int]] = mapped_column(ARRAY(Integer), default=list)
 
 class ReadStatus(Enum):
@@ -46,7 +47,7 @@ class Message(Base):
     __tablename__ = "messages"
     id: Mapped[int] = mapped_column(primary_key=True)
     chat_id: Mapped[int] = mapped_column(ForeignKey("chats.id"))
-    sender_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    sender_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
     text: Mapped[str] = mapped_column(Text)
     timestamp: Mapped[datetime] = mapped_column(TIMESTAMP, server_default=func.now(), nullable=False)
     read_status: Mapped[ReadStatus] = mapped_column(SQLEnam(ReadStatus, name="read_status"), default=ReadStatus.UNREAD)
