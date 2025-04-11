@@ -1,4 +1,5 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, UUID4
+
 
 class UserCreate(BaseModel):
     name: str
@@ -6,12 +7,12 @@ class UserCreate(BaseModel):
     password: str = Field(min_length=6)
 
 class UserOut(BaseModel):
-    id: int
+    uuid: UUID4
     name: str
     email: EmailStr
-
     class Config:
         from_attributes = True
+
 
 class LoginData(BaseModel):
     email: EmailStr

@@ -1,25 +1,22 @@
-from contextlib import asynccontextmanager
+
 from typing import List
 
+import jwt
 from fastapi import FastAPI
-from sqlalchemy import text
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from .auth.views.auth_views import auth_router
 from .config import settings
-from .database import engine
 
 app = FastAPI()
 app.include_router(auth_router)
 
 active_connections: List[WebSocket] = []
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    async with engine.begin() as conn:
-        engine.echo = False
-        await conn.execute(text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'))
-        yield
 
+# async def get_current_user_ws(token: str):
+#     try:
+#         playload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+#
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
