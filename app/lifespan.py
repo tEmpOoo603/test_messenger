@@ -1,8 +1,9 @@
 from contextlib import asynccontextmanager
 
+from fastapi import FastAPI
 from sqlalchemy import text
 
-from app.database import engine
+from app.database.database import engine
 
 
 @asynccontextmanager
