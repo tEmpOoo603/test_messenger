@@ -1,32 +1,25 @@
-from typing import Union, Optional
-from uuid import UUID
-from fastapi import Request
+from typing import Optional
+
 import bcrypt
 import jwt
 from datetime import datetime, timedelta
 
-from fastapi import Depends, HTTPException
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import HTTPException
 from starlette import status
+from fastapi import Request
 from starlette.websockets import WebSocket
 
 from ..config import settings
-from ..database import get_db_session, User
-from ..users.schemas import PublicUser
 
 
-# hash password to store in database
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
-# check that given password is equal to hashed password
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
 
 
-# create JWT token
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     to_encode = data.copy()
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))
@@ -60,9 +53,3 @@ async def get_user_from_token(token: str = None) -> str:
         return user_uuid
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-
-
-async def get_users_list(current_user_uuid: UUID, db: AsyncSession = Depends(get_db_session)) -> dict:
-    result = await db.execute(select(User).filter(User.uuid != current_user_uuid).order_by(User.name))
-    users = result.scalars().all()
-    return {'users': [PublicUser.from_orm(user) for user in users]}

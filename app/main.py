@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from starlette.websockets import WebSocket
 
 from .chats import chat_router
-from .users import users_router
+from .controllers.user_controller import users_router
 
 app = FastAPI()
 app.include_router(users_router)
