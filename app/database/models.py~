@@ -26,7 +26,6 @@ class User(Base):
     password: Mapped[str]
 
     chats: Mapped[list["UserChat"]] = relationship("UserChat", back_populates="user_obj")
-    received_messages: Mapped[list["MessageUserRead"]] = relationship("MessageUserRead", back_populates="user_obj")
 
 class Chat(Base):
     __tablename__ = "chats"
