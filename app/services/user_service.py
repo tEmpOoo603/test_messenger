@@ -20,7 +20,8 @@ class UserService:
         return bool(result)
 
     async def get_other_users_list(self, current_user_uuid: UUID) -> dict:
-        return await self.user_repo.get_user_list_without_current(current_user_uuid=current_user_uuid)
+        return {'users': [PublicUser.from_orm(user) for user in
+                          await self.user_repo.get_user_list_without_current(current_user_uuid=current_user_uuid)]}
 
     async def register_user_service(self, user_data: UserCreate) -> UserOut:
         hashed_pwd = hash_password(user_data.password)
@@ -32,7 +33,7 @@ class UserService:
         saved_user = await self.user_repo.add_new_user(user=user)
         return UserOut.from_orm(saved_user)
 
-    async def login_user_service(self,data: LoginData) -> Token:
+    async def login_user_service(self, data: LoginData) -> Token:
         user = await self.user_repo.get_user_by_email(data.email)
         if not user or not verify_password(data.password, user.password):
             raise HTTPException(status_code=401, detail="Invalid credentials")

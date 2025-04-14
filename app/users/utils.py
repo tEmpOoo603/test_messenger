@@ -1,13 +1,9 @@
-from typing import Optional
-
 import bcrypt
 import jwt
 from datetime import datetime, timedelta
 
 from fastapi import HTTPException
 from starlette import status
-from fastapi import Request
-from starlette.websockets import WebSocket
 
 from ..config import settings
 
@@ -27,17 +23,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
-async def get_uuid_request(request: Request) -> Optional[str]:
-    token = request.headers.get("Authorization")
-    return await get_user_from_token(token=token)
-
-
-async def get_uuid_ws(ws: WebSocket) -> Optional[str]:
-    token = ws.headers.get("Authorization")
-    return await get_user_from_token(token=token)
-
-
-async def get_user_from_token(token: str = None) -> str:
+async def get_user_uuid_from_token(token: str = None) -> str:
     try:
         if not token:
             raise HTTPException(status_code=401, detail="Authorization token missing")

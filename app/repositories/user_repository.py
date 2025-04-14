@@ -2,9 +2,8 @@ from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from ..users.schemas import PublicUser
 from app.database import User
-from app.users.schemas import PublicUser, UserCreate
 
 
 class UserRepository:
@@ -15,10 +14,9 @@ class UserRepository:
         result = await self.db.execute(select(User).where(User.email == email))
         return result.scalars().first()
 
-    async def get_user_list_without_current(self, current_user_uuid: UUID):
+    async def get_user_list_without_current(self, current_user_uuid: UUID) -> list[PublicUser]:
         result = await self.db.execute(select(User).filter(User.uuid != current_user_uuid).order_by(User.name))
-        users = result.scalars().all()
-        return {'users': [PublicUser.from_orm(user) for user in users]}
+        return list(result.scalars().all())
 
     async def add_new_user(self, user: User):
         self.db.add(user)

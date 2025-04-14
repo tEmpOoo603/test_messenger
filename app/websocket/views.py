@@ -1,12 +1,10 @@
 from uuid import UUID
 
-from fastapi import HTTPException, Depends
-from starlette import status
+from fastapi import Depends
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from ..main import app, active_connections
-from ..users import get_user_from_token
-from ..users.utils import get_uuid_ws
+from ..dependencies import get_uuid_ws
 
 
 @app.websocket("/ws")
