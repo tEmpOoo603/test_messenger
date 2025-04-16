@@ -63,6 +63,7 @@ class MessageUserRead(Base):
     __tablename__ = "message_user_read"
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.uuid"), primary_key=True)
     message_id: Mapped[int] = mapped_column(ForeignKey("messages.id"), primary_key=True)
+    status: Mapped[ReadStatus] = mapped_column(SQLEnam(ReadStatus, name="read_status"), nullable=False, default=ReadStatus.UNREAD)
 
-    user_obj: Mapped["User"] = relationship("User", back_populates="message_read_obj")
+    user_obj: Mapped["User"] = relationship("User", back_populates="received_messages")
     message_obj: Mapped["Message"] = relationship("Message", back_populates="user_read_obj")
