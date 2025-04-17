@@ -1,22 +1,25 @@
 from typing import Callable, Awaitable, Dict
 from uuid import UUID
 
-from fastapi import Depends
+from fastapi.encoders import jsonable_encoder
 from starlette.websockets import WebSocket
 
 from app.chats import CreateChat
-from app.dependencies import create_ws_service
+from app.chats.schemas import CreateMessage
 from app.services.ws_service import WsService
 
-HandlerType = Callable[[UUID, dict, WebSocket], Awaitable[None]]
+HandlerType = Callable[[UUID, dict, WebSocket, WsService], Awaitable[None]]
 
 registry: Dict[str, HandlerType] = {}
+
 
 def register_action(action: str):
     def wrapper(func: HandlerType):
         registry[action] = func
         return func
+
     return wrapper
+
 
 @register_action("create_chat")
 async def ws_create_chat(
@@ -25,7 +28,25 @@ async def ws_create_chat(
         ws: WebSocket,
         ws_service: WsService
 ):
-    chat = CreateChat(**payload)
-    chat = await ws_service.create_chat(chat_data=chat, current_user_uuid=current_user_uuid)
-    await ws.send_json({"action": "create_chat", "data": chat.model_dump()})
+    chat_data = CreateChat(**payload).copy(update={"creator": current_user_uuid})
+    new_chat = await ws_service.create_chat(chat_data=chat_data)
+    await ws.send_json({"action": "create_chat", "data": new_chat.model_dump()})
 
+
+@register_action("message")
+async def ws_message(
+        current_user_uuid: UUID,
+        payload: dict,
+        ws: WebSocket,
+        ws_service: WsService
+):
+    message = CreateMessage(**payload).copy(update={"sender": current_user_uuid})
+    try:
+        message_data = await ws_service.send_message(message=message)
+        await ws.send_json({"action": "message", "data": jsonable_encoder(message_data)})
+
+    except ValueError as e:
+        await ws.send_json({"detail": str(e)})
+
+    except Exception as e:
+        await ws.send_json({"detail": "Unexpected error occurred"})

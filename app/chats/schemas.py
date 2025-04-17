@@ -1,3 +1,5 @@
+from datetime import datetime
+from typing import Text
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -18,6 +20,7 @@ class CreateChat(BaseModel):
             raise HTTPException(status_code=400, detail="Private chat must have exactly one user_id.")
         return self
 
+
 class ChatOut(BaseModel):
     id: int
     name: str
@@ -28,3 +31,20 @@ class ChatOut(BaseModel):
     class Config:
         from_attributes = True
         use_enum_values = True
+
+
+class CreateMessage(BaseModel):
+    chat: int
+    text: Text
+    sender: str = None
+
+
+class MessageOut(BaseModel):
+    id: int
+    chat: int
+    sender: str
+    text: Text
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True
