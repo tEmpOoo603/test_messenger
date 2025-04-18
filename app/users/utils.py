@@ -1,3 +1,5 @@
+from uuid import UUID
+
 import bcrypt
 import jwt
 from datetime import datetime, timedelta
@@ -23,7 +25,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
-async def get_user_uuid_from_token(token: str = None) -> str:
+async def get_user_uuid_from_token(token: str = None) -> UUID:
     try:
         if not token:
             raise HTTPException(status_code=401, detail="Authorization token missing")
@@ -36,6 +38,6 @@ async def get_user_uuid_from_token(token: str = None) -> str:
         user_uuid = payload.get("sub")
         if user_uuid is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-        return user_uuid
+        return UUID(user_uuid)
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")

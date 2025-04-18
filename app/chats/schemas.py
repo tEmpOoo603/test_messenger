@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import HTTPException
 from pydantic import BaseModel, model_validator
 
-from ..database import ChatType
+from ..database import ChatType, ReadStatus
 
 
 class CreateChat(BaseModel):
@@ -42,9 +42,11 @@ class CreateMessage(BaseModel):
 class MessageOut(BaseModel):
     id: int
     chat: int
-    sender: str
+    sender: UUID
     text: Text
     timestamp: datetime
+    read_status: ReadStatus
 
     class Config:
         from_attributes = True
+        use_enum_values = True

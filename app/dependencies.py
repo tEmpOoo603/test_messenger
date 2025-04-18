@@ -1,4 +1,5 @@
 from typing import Optional
+from uuid import UUID
 
 from starlette.requests import Request
 from starlette.websockets import WebSocket
@@ -26,11 +27,11 @@ async def create_ws_service(DBSession: DBSession) -> WsService:
     return WsService(ws_repo=ws_repo)
 
 
-async def get_uuid_request(request: Request) -> Optional[str]:
+async def get_uuid_request(request: Request) -> UUID:
     token = request.headers.get("Authorization")
     return await get_user_uuid_from_token(token=token)
 
 
-async def get_uuid_ws(ws: WebSocket) -> Optional[str]:
+async def get_uuid_ws(ws: WebSocket) -> UUID:
     token = ws.headers.get("Authorization")
     return await get_user_uuid_from_token(token=token)

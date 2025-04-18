@@ -55,14 +55,15 @@ class Message(Base):
     sender: Mapped[UUID] = mapped_column(ForeignKey("users.uuid"))
     text: Mapped[str] = mapped_column(Text)
     timestamp: Mapped[datetime] = mapped_column(TIMESTAMP, server_default=func.now(), nullable=False)
+    read_status: Mapped[ReadStatus] = mapped_column(SQLEnam(ReadStatus, name="read_status"), nullable=False, default=ReadStatus.UNREAD)
 
     user_read_obj: Mapped["MessageUserRead"] = relationship("MessageUserRead", back_populates="message_obj")
     chat_obj: Mapped["Chat"] = relationship("Chat", back_populates="messages")
 
 class MessageUserRead(Base):
     __tablename__ = "message_user_read"
-    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.uuid"), primary_key=True)
-    message_id: Mapped[int] = mapped_column(ForeignKey("messages.id"), primary_key=True)
+    user: Mapped[UUID] = mapped_column(ForeignKey("users.uuid"), primary_key=True)
+    message: Mapped[int] = mapped_column(ForeignKey("messages.id"), primary_key=True)
     status: Mapped[ReadStatus] = mapped_column(SQLEnam(ReadStatus, name="read_status"), nullable=False, default=ReadStatus.UNREAD)
 
     user_obj: Mapped["User"] = relationship("User", back_populates="received_messages")
