@@ -30,5 +30,5 @@ async def UserLoginView(
 @users_router.get("/users_list")
 async def GetUsersView(
         user_service: UserService = Depends(create_user_service),
-        current_user_uuid: UUID = Depends(get_uuid_request)):
-    return await user_service.get_other_users_list(current_user_uuid=current_user_uuid)
+        user_uuid: UUID = Depends(get_uuid_request)):
+    return await user_service.get_other_users_list(user_uuid=user_uuid)

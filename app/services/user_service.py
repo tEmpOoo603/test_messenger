@@ -19,23 +19,33 @@ class UserService:
         result = await self.user_repo.get_user_by_email(email=email)
         return bool(result)
 
-    async def get_other_users_list(self, current_user_uuid: UUID) -> dict:
+    async def get_other_users_list(self, user_uuid: UUID) -> dict:
         return {'users': [PublicUser.from_orm(user) for user in
-                          await self.user_repo.get_user_list_without_current(current_user_uuid=current_user_uuid)]}
+                          await self.user_repo.get_user_list_without_current(user_uuid=user_uuid)]}
+
+    async def make_rollback(self):
+        await self.user_repo.make_rollback()
 
     async def register_user_service(self, user_data: UserCreate) -> UserOut:
-        hashed_pwd = hash_password(user_data.password)
-        user = User(
-            name=user_data.name,
-            email=user_data.email,
-            password=hashed_pwd
-        )
-        saved_user = await self.user_repo.add_new_user(user=user)
-        return UserOut.from_orm(saved_user)
+        try:
+            hashed_pwd = hash_password(user_data.password)
+            user = User(
+                name=user_data.name,
+                email=user_data.email,
+                password=hashed_pwd
+            )
+            saved_user = await self.user_repo.add_new_user(user=user)
+
+            user_out = UserOut.from_orm(saved_user)
+            return user_out
+        except Exception as e:
+            await self.make_rollback()
+            raise HTTPException(status_code=500, detail=str(e))
+
 
     async def login_user_service(self, data: LoginData) -> Token:
         user = await self.user_repo.get_user_by_email(data.email)
         if not user or not verify_password(data.password, user.password):
             raise HTTPException(status_code=401, detail="Invalid credentials")
-        access_token = create_access_token(data={"sub": str(user.uuid)})
-        return Token(access_token=f"Bearer {access_token}", uuid=user.uuid)
+        access_token = create_access_token(data={"sub": str(user.user_uuid)})
+        return Token(access_token=f"Bearer {access_token}", user_uuid=user.user_uuid)

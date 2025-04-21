@@ -21,10 +21,10 @@ class WsRepository:
         self.db.add(new_chat)
         await self.db.flush()
         self.db.add_all([
-                            UserChat(user=user_id, chat=new_chat.id) for user_id in chat_data.user_ids
-                        ] + [UserChat(user=chat_data.creator, chat=new_chat.id)])
+                            UserChat(user=user_uuid, chat=new_chat.id) for user_uuid in chat_data.user_uuids
+                        ] + [UserChat(user=chat_data.creator_uuid, chat=new_chat.id)])
         await self.db.commit()
-        return ChatOut.from_orm(new_chat).copy(update={"user_ids": chat_data.user_ids})
+        return ChatOut.from_orm(new_chat).copy(update={"user_uuids": chat_data.user_uuids})
 
     async def get_chat_by_id(self, chat_id: int) -> Chat | None:
         try:
@@ -33,33 +33,36 @@ class WsRepository:
         except:
             raise ValueError("detail: Chat not found.")
 
-    async def is_user_in_chat(self, user_id: str, chat_id: int) -> bool:
-        result = await self.db.execute(select(UserChat).where(UserChat.user == user_id, UserChat.chat == chat_id))
+    async def is_user_in_chat(self, user_uuid: UUID, chat_id: int) -> bool:
+        result = await self.db.execute(select(UserChat).where(UserChat.user_uuid == user_uuid, UserChat.chat == chat_id))
         return bool(result.scalars().first())
 
-    async def create_message(self, message: Message, users: list[UUID]) -> MessageOut:
-        self.db.add(message)
-        await self.db.flush()
-        self.db.add_all(
-            [MessageUserRead(user=user, message=message.id) for user in users if user != UUID(message.sender)])
-        await self.db.commit()
-        return MessageOut.from_orm(message)
-
+    async def create_message(self, message: Message, users_uuids: list[UUID]) -> MessageOut:
+        try:
+            self.db.add(message)
+            await self.db.flush()
+            self.db.add_all(
+                [MessageUserRead(user_uuid=user_uuid, message=message.id) for user_uuid in users_uuids if user_uuid != message.sender_uuid])
+            await self.db.commit()
+            return MessageOut.from_orm(message)
+        except:
+            await self.make_rollback()
+            raise ValueError("Can't create message.")
     async def get_chat_users(self, chat_id: int) -> list[UUID]:
-        result = await self.db.execute(select(UserChat.user).where(UserChat.chat == chat_id))
+        result = await self.db.execute(select(UserChat.user_uuid).where(UserChat.chat == chat_id))
         return list(result.scalars().all())
 
     async def make_rollback(self):
         await self.db.rollback()
 
-    async def mark_read(self, message_ids: list[int], user_id: UUID) -> Sequence[MessageUserRead]:
+    async def mark_read(self, message_ids: list[int], user_uuid: UUID) -> Sequence[MessageUserRead]:
 
         try:
             result = await self.db.execute(
                 update(MessageUserRead)
                 .where(
                     MessageUserRead.message.in_(message_ids),
-                    MessageUserRead.user == user_id
+                    MessageUserRead.user_uuid == user_uuid
                 )
                 .values(status=ReadStatus.READ)
                 .returning(MessageUserRead)
@@ -90,18 +93,18 @@ class WsRepository:
         try:
             messages = await self.db.execute(select(Message).where(Message.id.in_(messages_ids)))
             message = messages.scalars().all()
-            if message is None:
+            if not message:
                 raise ValueError("detail: Message not found.")
             return list(message)
         except:
             raise ValueError("detail: Message not found.")
 
-    async def get_unread_messages(self, user_id: UUID) -> list[Message]:
+    async def get_unread_messages(self, user_uuid: UUID) -> list[Message]:
         result = await self.db.execute(
             select(Message)
             .join(MessageUserRead)
             .where(
-                MessageUserRead.user == user_id,
+                MessageUserRead.user_uuid == user_uuid,
                 MessageUserRead.status == ReadStatus.UNREAD
             )
         )
@@ -116,5 +119,5 @@ class WsRepository:
             )
             await self.db.commit()
         except IntegrityError as e:
-            await self.db.rollback()
+            await self.make_rollback()
             raise RuntimeError(f"Failed to update message read status: {e}")

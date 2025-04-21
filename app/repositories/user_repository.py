@@ -14,12 +14,18 @@ class UserRepository:
         result = await self.db.execute(select(User).where(User.email == email))
         return result.scalars().first()
 
-    async def get_user_list_without_current(self, current_user_uuid: UUID) -> list[PublicUser]:
-        result = await self.db.execute(select(User).filter(User.uuid != current_user_uuid).order_by(User.name))
+    async def make_rollback(self):
+        await self.db.rollback()
+
+    async def get_user_list_without_current(self, user_uuid: UUID) -> list[PublicUser]:
+        result = await self.db.execute(select(User).filter(User.user_uuid != user_uuid).order_by(User.name))
         return list(result.scalars().all())
 
     async def add_new_user(self, user: User):
-        self.db.add(user)
-        await self.db.commit()
-        await self.db.refresh(user)
-        return user
+        try:
+            self.db.add(user)
+            await self.db.commit()
+            return user
+        except Exception:
+            await self.make_rollback()
+            raise ValueError("Can't add new user.")

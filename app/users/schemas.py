@@ -8,14 +8,14 @@ class UserCreate(BaseModel):
     password: str = Field(min_length=6)
 
 class UserOut(BaseModel):
-    uuid: UUID4
+    user_uuid: UUID4
     name: str
     email: EmailStr
     class Config:
         from_attributes = True
 
 class PublicUser(BaseModel):
-    uuid: UUID
+    user_uuid: UUID
     name: str
     class Config:
         from_attributes = True
@@ -25,5 +25,5 @@ class LoginData(BaseModel):
     password: str
 
 class Token(BaseModel):
-    uuid: UUID
+    user_uuid: UUID
     access_token: str

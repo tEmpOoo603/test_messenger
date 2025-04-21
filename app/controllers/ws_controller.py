@@ -35,34 +35,33 @@ ws_router = APIRouter(
 
 @ws_router.websocket("/connect")
 async def connect(
-        websocket: WebSocket,
-        current_user_uuid: UUID = Depends(get_uuid_ws),
-        ws_service: WsService = Depends(create_ws_service),
+    websocket: WebSocket,
+    user_uuid: UUID = Depends(get_uuid_ws),
+    ws_service: WsService = Depends(create_ws_service),
 ):
     await websocket.accept()
-    await ws_service.unread_messages(current_user_uuid, websocket)
-    connection_manager.connect(current_user_uuid, websocket)
-    while True:
-        try:
+    connection_manager.connect(user_uuid, websocket)
+    try:
+        await ws_service.unread_messages(user_uuid, websocket)
+
+        while True:
             raw = await websocket.receive_text()
             payload = json.loads(raw)
-            action = payload['action']
+            action = payload.get("action")
 
             handler = registry.get(action)
-            if handler is None:
+            if not handler:
                 await websocket.send_json({"detail": f"Unknown action: {action}"})
                 continue
-            await handler(current_user_uuid, payload, websocket, ws_service)
 
-        except WebSocketDisconnect:
-            connection_manager.disconnect(current_user_uuid)
-            await ws_service.make_rollback()
+            await handler(user_uuid, payload, websocket, ws_service)
 
-        except Exception as e:
-            await ws_service.make_rollback()
+    except WebSocketDisconnect:
+        pass  # просто выходим
 
-            try:
-                await websocket.send_json({"detail": str(e)})
-            except Exception:
-                connection_manager.disconnect(current_user_uuid)
-                await websocket.close()
+    finally:
+        connection_manager.disconnect(user_uuid)
+        try:
+            await websocket.close()
+        except Exception:
+            pass

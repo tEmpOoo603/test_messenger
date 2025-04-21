@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Text
+from typing import Text, Optional
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -9,15 +9,15 @@ from ..database import ChatType, ReadStatus
 
 
 class CreateChat(BaseModel):
-    creator: str | None = None
+    creator_uuid: UUID | None = None
     type: ChatType
     name: str
-    user_ids: list[str]
+    user_uuids: list[UUID]
 
     @model_validator(mode='after')
     def check_private_chat_user_count(self):
-        if self.type == ChatType.PRIVATE and len(self.user_ids) != 1:
-            raise HTTPException(status_code=400, detail="Private chat must have exactly one user_id.")
+        if self.type == ChatType.PRIVATE and len(self.user_uuids) != 1:
+            raise ValueError("Private chat must have exactly one user.")
         return self
 
 
@@ -25,8 +25,8 @@ class ChatOut(BaseModel):
     id: int
     name: str
     type: ChatType
-    creator: str
-    user_ids: list[str] = None
+    creator_uuid: UUID
+    user_uuids: Optional[list[UUID]] = None
 
     class Config:
         from_attributes = True
@@ -35,15 +35,15 @@ class ChatOut(BaseModel):
 
 class CreateMessage(BaseModel):
     chat: int
-    text: Text
-    sender: str = None
+    text: str
+    sender_uuid: UUID = None
 
 
 class MessageOut(BaseModel):
     id: int
     chat: int
-    sender: UUID
-    text: Text
+    sender_uuid: UUID
+    text: str
     timestamp: datetime
     read_status: ReadStatus
 
