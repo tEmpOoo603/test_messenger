@@ -2,12 +2,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from ..dependencies import create_user_service, get_uuid_request
+from ..logging_decorator import log_exceptions
 from ..services.user_service import UserService
 from ..users.schemas import UserOut, UserCreate, LoginData, Token
 
 users_router = APIRouter()
 
-
+@log_exceptions
 @users_router.post("/register", response_model=UserOut)
 async def UserRegisterView(
         user_data: UserCreate,
@@ -18,7 +19,7 @@ async def UserRegisterView(
 
     return await user_service.register_user_service(user_data=user_data)
 
-
+@log_exceptions
 @users_router.post("/login", response_model=Token)
 async def UserLoginView(
         data: LoginData,

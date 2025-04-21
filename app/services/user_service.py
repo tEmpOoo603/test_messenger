@@ -19,7 +19,7 @@ class UserService:
         result = await self.user_repo.get_user_by_email(email=email)
         return bool(result)
 
-    async def get_other_users_list(self, user_uuid: UUID) -> dict:
+    async def get_other_users_list(self, user_uuid: UUID) -> dict[str, list[PublicUser]]:
         return {'users': [PublicUser.from_orm(user) for user in
                           await self.user_repo.get_user_list_without_current(user_uuid=user_uuid)]}
 
