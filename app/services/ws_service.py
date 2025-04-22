@@ -6,6 +6,7 @@ from starlette.websockets import WebSocket
 from app.chats import CreateChat
 from app.chats.schemas import ChatOut, CreateMessage, MessageOut
 from app.database import Message
+from app.repositories.chat_repository import ChatRepository
 from app.repositories.ws_repository import WsRepository
 from app.websocket.connection_manager import connection_manager
 
@@ -13,13 +14,20 @@ from app.websocket.connection_manager import connection_manager
 class WsService:
     def __init__(self, ws_repo: WsRepository):
         self.ws_repo = ws_repo
+        self._chat_repo = None
+
+    @property
+    def chat_repo(self):
+        if self._chat_repo is None:
+            self._chat_repo = ChatRepository(db=self.ws_repo.db)
+        return self._chat_repo
 
     async def create_chat(self, chat_data: CreateChat) -> ChatOut:
 
         if chat_data.creator_uuid in chat_data.user_uuids:
             raise ValueError("Creator cannot be a member of the chat.")
 
-        return await self.ws_repo.create_chat(chat_data=chat_data)
+        return await self.chat_repo(chat_data=chat_data)
 
     async def chat_send_message(self, message: MessageOut, users_uuid: list[UUID]):
         for user_uuid in users_uuid:
@@ -29,14 +37,14 @@ class WsService:
 
     async def create_message(self, message: CreateMessage) -> MessageOut:
 
-        if await self.ws_repo.get_chat_by_id(message.chat) is None:
+        if await self.chat_repo.get_chat_by_id(message.chat) is None:
             raise ValueError("Chat not found.")
-        elif await self.ws_repo.is_user_in_chat(message.sender_uuid, message.chat) is False:
+        elif await self.chat_repo.is_user_in_chat(message.sender_uuid, message.chat) is False:
             raise ValueError("User not in chat.")
 
         message = Message(**message.dict())
 
-        users_uuids: list[UUID] = await self.ws_repo.get_chat_users(message.chat)
+        users_uuids: list[UUID] = await self.chat_repo.get_chat_users(message.chat)
         created_message = await self.ws_repo.create_message(message=message, users_uuids=users_uuids)
         await self.chat_send_message(message=created_message, users_uuid=users_uuids)
 

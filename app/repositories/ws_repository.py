@@ -16,27 +16,6 @@ class WsRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def create_chat(self, chat_data: CreateChat) -> ChatOut:
-        new_chat = Chat(**chat_data.dict(exclude={"user_ids"}))
-        self.db.add(new_chat)
-        await self.db.flush()
-        self.db.add_all([
-                            UserChat(user=user_uuid, chat=new_chat.id) for user_uuid in chat_data.user_uuids
-                        ] + [UserChat(user=chat_data.creator_uuid, chat=new_chat.id)])
-        await self.db.commit()
-        return ChatOut.from_orm(new_chat).copy(update={"user_uuids": chat_data.user_uuids})
-
-    async def get_chat_by_id(self, chat_id: int) -> Chat | None:
-        try:
-            chat = await self.db.execute(select(Chat).where(Chat.id == chat_id))
-            return chat.scalars().first()
-        except:
-            raise ValueError("detail: Chat not found.")
-
-    async def is_user_in_chat(self, user_uuid: UUID, chat_id: int) -> bool:
-        result = await self.db.execute(select(UserChat).where(UserChat.user_uuid == user_uuid, UserChat.chat == chat_id))
-        return bool(result.scalars().first())
-
     async def create_message(self, message: Message, users_uuids: list[UUID]) -> MessageOut:
         try:
             self.db.add(message)
@@ -48,9 +27,6 @@ class WsRepository:
         except:
             await self.make_rollback()
             raise ValueError("Can't create message.")
-    async def get_chat_users(self, chat_id: int) -> list[UUID]:
-        result = await self.db.execute(select(UserChat.user_uuid).where(UserChat.chat == chat_id))
-        return list(result.scalars().all())
 
     async def make_rollback(self):
         await self.db.rollback()
