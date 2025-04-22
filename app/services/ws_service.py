@@ -6,6 +6,7 @@ from starlette.websockets import WebSocket
 from app.chats import CreateChat
 from app.chats.schemas import ChatOut, CreateMessage, MessageOut
 from app.database import Message
+from app.exceptions import WSException
 from app.repositories.chat_repository import ChatRepository
 from app.repositories.ws_repository import WsRepository
 from app.websocket.connection_manager import connection_manager
@@ -23,24 +24,22 @@ class WsService:
         return self._chat_repo
 
     async def create_chat(self, chat_data: CreateChat) -> ChatOut:
-
         if chat_data.creator_uuid in chat_data.user_uuids:
-            raise ValueError("Creator cannot be a member of the chat.")
+            raise WSException("Creator cannot be a member of the chat.")
 
-        return await self.chat_repo(chat_data=chat_data)
+        return await self.chat_repo.create_chat(chat_data=chat_data)
 
     async def chat_send_message(self, message: MessageOut, users_uuid: list[UUID]):
         for user_uuid in users_uuid:
             user_websocket = connection_manager.get(user_uuid)
             if user_websocket and user_uuid != message.sender_uuid:
-                await user_websocket.send_json({"action": "message", "data": jsonable_encoder(message)})
+                await user_websocket.send_json({"action": "message", "data": message.model_dump(mode="json")})
 
     async def create_message(self, message: CreateMessage) -> MessageOut:
-
         if await self.chat_repo.get_chat_by_id(message.chat) is None:
-            raise ValueError("Chat not found.")
+            raise WSException("Chat not found.")
         elif await self.chat_repo.is_user_in_chat(message.sender_uuid, message.chat) is False:
-            raise ValueError("User not in chat.")
+            raise WSException("User not in chat.")
 
         message = Message(**message.dict())
 
@@ -62,18 +61,14 @@ class WsService:
                     {"action": "message_read", "data": {"text": f"Message {message.id} has been read."}})
 
     async def mark_read(self, message_ids: list[int], user_uuid: UUID) -> None:
-        try:
-            updated = await self.ws_repo.mark_read(message_ids=message_ids, user_uuid=user_uuid)
-            if len(updated) == 0:
-                raise ValueError("No message to read or already read.")
+        updated = await self.ws_repo.mark_read(message_ids=message_ids, user_uuid=user_uuid)
+        if len(updated) == 0:
+            raise WSException("No message to read or already read.")
 
-            readen_message_ids: list[int] = await self.ws_repo.check_messages_read(message_ids=[message.message for message in updated])
-            if readen_message_ids:
-                await self.ws_repo.mark_mes_read(messages_ids=readen_message_ids)
-                await self.notify_messages_read(messages_ids=readen_message_ids)
-        except:
-            await self.make_rollback()
-            raise ValueError("Can't mark message read.")
+        readen_message_ids: list[int] = await self.ws_repo.check_messages_read(message_ids=[message.message for message in updated])
+        if readen_message_ids:
+            await self.ws_repo.mark_mes_read(messages_ids=readen_message_ids)
+            await self.notify_messages_read(messages_ids=readen_message_ids)
 
     async def unread_messages(self, user_uuid: UUID, websocket: WebSocket) -> None:
         messages = await self.ws_repo.get_unread_messages(user_uuid=user_uuid)

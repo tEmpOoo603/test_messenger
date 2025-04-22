@@ -8,6 +8,8 @@ from fastapi import HTTPException
 from starlette import status
 
 from ..config import settings
+from ..exceptions import UserException
+from ..exceptions import logger
 
 
 def hash_password(password: str) -> str:
@@ -19,25 +21,29 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def create_access_token(data: dict) -> str:
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=60)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-
+    try:
+        to_encode = data.copy()
+        expire = datetime.utcnow() + timedelta(minutes=60)
+        to_encode.update({"exp": expire})
+        return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    except Exception as e:
+        logger.error(f"Exception in {create_access_token.__name__}: {e}")
+        raise
 
 async def get_user_uuid_from_token(token: str = None) -> UUID:
     try:
         if not token:
-            raise HTTPException(status_code=401, detail="Authorization token missing")
+            raise UserException("Authorization token missing")
 
         token = token.split(" ")
         if len(token) != 2 or token[0] != "Bearer":
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Bearer token")
+            raise UserException("Invalid Bearer token")
         token = token[1]
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         user_uuid = payload.get("sub")
         if user_uuid is None:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+            raise UserException("Invalid token")
         return UUID(user_uuid)
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    except Exception as e:
+        logger.error(f"Exception in {get_user_uuid_from_token.__name__}: {e}")
+        raise UserException("Invalid token")

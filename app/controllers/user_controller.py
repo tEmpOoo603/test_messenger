@@ -1,14 +1,14 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
+
 from ..dependencies import create_user_service, get_uuid_request
-from ..logging_decorator import log_exceptions
 from ..services.user_service import UserService
 from ..users.schemas import UserOut, UserCreate, LoginData, Token
 
 users_router = APIRouter()
 
-@log_exceptions
+
 @users_router.post("/register", response_model=UserOut)
 async def UserRegisterView(
         user_data: UserCreate,
@@ -17,15 +17,15 @@ async def UserRegisterView(
     if await user_service.user_exists(email=user_data.email):
         raise HTTPException(status_code=400, detail="User already exists")
 
-    return await user_service.register_user_service(user_data=user_data)
+    return await user_service.register_user(user_data=user_data)
 
-@log_exceptions
+
 @users_router.post("/login", response_model=Token)
 async def UserLoginView(
         data: LoginData,
         user_service: UserService = Depends(create_user_service)
 ):
-    return await user_service.login_user_service(data=data)
+    return await user_service.login_user(data=data)
 
 
 @users_router.get("/users_list")
