@@ -49,8 +49,8 @@ class ChatRepository:
         try:
             chat = await self.db.execute(select(Chat).where(Chat.id == chat_id))
             return chat.scalars().first()
-        except:
-            logger.error(f"Exception in {self.get_chat_by_id.__name__}: {e}")
+        except Exception as e:
+            logger.error(f"Exception in {self.get_chat_by_id.__name__}: {str(e)}")
             raise ChatException(f"Error getting chat info")
 
     async def get_chat_history(self, chat_id: int) -> list[MessageOut]:
@@ -61,5 +61,5 @@ class ChatRepository:
                 raise ChatException("detail: No chat history.")
             return [MessageOut.from_orm(m) for m in message]
         except Exception as e:
-            logger.error(f"Exception in {self.get_chat_history.__name__}: {e}")
+            logger.error(f"Exception in {self.get_chat_history.__name__}: {str(e)}")
             raise ChatException(f"Error getting chat history")

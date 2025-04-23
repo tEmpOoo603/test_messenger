@@ -35,10 +35,10 @@ async def ws_create_chat(
         new_chat = await ws_service.create_chat(chat_data=chat_data)
         await ws.send_json({"action": "create_chat", "data": new_chat.model_dump(mode="json")})
 
-    except ValidationError:
-        await ws.send_json({"detail": "Incorrect chat parameters."})
+    except ValidationError as e:
+        await ws.send_json({"detail": f"Incorrect chat parameters. Error: {str(e)}"})
     except Exception as e:
-        logger.error(f"Exception in {ws_create_chat.__name__}: {e}")
+        logger.error(f"Exception in {ws_create_chat.__name__}: {str(e)}")
         await ws.send_json({"detail": "Failed to create chat."})
 
 
@@ -54,10 +54,13 @@ async def ws_send_message(
         message_data = await ws_service.create_message(message=message)
         await ws.send_json({"action": "message", "data": jsonable_encoder(message_data)})
 
-    except ValueError as e:
+    except ValidationError:
+        await ws.send_json({"detail": f"Incorrect message parameters."})
+
+    except WSException as e:
         await ws.send_json({"detail": str(e)})
 
-    except Exception as e:
+    except Exception:
         await ws.send_json({"detail": "Failed to send message."})
 
 
@@ -72,4 +75,4 @@ async def ws_mark_read(
         message_ids: list[int] = payload.get("message_ids")
         await ws_service.mark_read(message_ids=message_ids, user_uuid=user_uuid)
     except (WSException, UserException, ChatException) as e:
-        await ws.send_json({"detail": e})
+        await ws.send_json({"detail": str(e)})

@@ -67,8 +67,9 @@ class WsService:
 
         readen_message_ids: list[int] = await self.ws_repo.check_messages_read(message_ids=[message.message for message in updated])
         if readen_message_ids:
-            await self.ws_repo.mark_mes_read(messages_ids=readen_message_ids)
-            await self.notify_messages_read(messages_ids=readen_message_ids)
+            updated = await self.ws_repo.mark_mes_read(messages_ids=readen_message_ids)
+            if updated > 0:
+                await self.notify_messages_read(messages_ids=readen_message_ids)
 
     async def unread_messages(self, user_uuid: UUID, websocket: WebSocket) -> None:
         messages = await self.ws_repo.get_unread_messages(user_uuid=user_uuid)

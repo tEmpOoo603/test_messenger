@@ -1,7 +1,7 @@
 from typing import Sequence
 from uuid import UUID
 
-from sqlalchemy import select, update, func
+from sqlalchemy import select, update, func, and_
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.testing import db
@@ -41,7 +41,8 @@ class WsRepository:
                 update(MessageUserRead)
                 .where(
                     MessageUserRead.message.in_(message_ids),
-                    MessageUserRead.user_uuid == user_uuid
+                    MessageUserRead.user_uuid == user_uuid,
+                    MessageUserRead.status == ReadStatus.UNREAD
                 )
                 .values(status=ReadStatus.READ)
                 .returning(MessageUserRead)
@@ -98,12 +99,15 @@ class WsRepository:
 
     async def mark_mes_read(self, messages_ids: list[int]):
         try:
-            await self.db.execute(
+            updated = await self.db.execute(
                 update(Message)
-                .where(Message.id.in_(messages_ids))
+                .where(
+                    Message.id.in_(messages_ids),
+                    Message.read_status == ReadStatus.UNREAD)
                 .values(read_status=ReadStatus.READ)
             )
             await self.db.commit()
+            return updated.rowcount
         except Exception as e:
             await self.make_rollback()
             logger.error(f"Exception in {self.mark_mes_read.__name__}: {e}")
