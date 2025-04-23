@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from fastapi import Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -7,6 +8,7 @@ from app.chats import CreateChat
 from app.chats.schemas import ChatOut, MessageOut
 from app.database import UserChat, Chat, Message
 from app.exceptions import ChatException
+from ..chats.pagination import chat_paginator
 from ..exceptions import logger
 
 
@@ -31,13 +33,16 @@ class ChatRepository:
             await self.make_rollback()
             logger.error(f"Exception in {self.create_chat.__name__}: {e}")
             raise ChatException(f"Failed to create chat")
+
     async def is_user_in_chat(self, user_uuid: UUID, chat_id: int) -> bool:
         try:
-            result = await self.db.execute(select(UserChat).where(UserChat.user_uuid == user_uuid, UserChat.chat == chat_id))
+            result = await self.db.execute(
+                select(UserChat).where(UserChat.user_uuid == user_uuid, UserChat.chat == chat_id))
             return bool(result.scalars().first())
         except Exception as e:
             logger.error(f"Exception in {self.is_user_in_chat.__name__}: {e}")
             raise ChatException(f"Error checking user for chat participant")
+
     async def get_chat_users(self, chat_id: int) -> list[UUID]:
         try:
             result = await self.db.execute(select(UserChat.user_uuid).where(UserChat.chat == chat_id))
@@ -45,6 +50,7 @@ class ChatRepository:
         except Exception as e:
             logger.error(f"Exception in {self.get_chat_users.__name__}: {e}")
             raise ChatException(f"Error getting chat users")
+
     async def get_chat_by_id(self, chat_id: int) -> Chat | None:
         try:
             chat = await self.db.execute(select(Chat).where(Chat.id == chat_id))
@@ -53,13 +59,14 @@ class ChatRepository:
             logger.error(f"Exception in {self.get_chat_by_id.__name__}: {str(e)}")
             raise ChatException(f"Error getting chat info")
 
-    async def get_chat_history(self, chat_id: int) -> list[MessageOut]:
-        try:
-            messages = await self.db.execute(select(Message).where(Message.chat == chat_id).order_by(Message.timestamp.desc()))
-            message = messages.scalars().all()
-            if not message:
-                raise ChatException("detail: No chat history.")
-            return [MessageOut.from_orm(m) for m in message]
-        except Exception as e:
-            logger.error(f"Exception in {self.get_chat_history.__name__}: {str(e)}")
-            raise ChatException(f"Error getting chat history")
+    async def get_chat_history(self, chat_id: int, paginator: dict) -> list[MessageOut]:
+        messages = await self.db.execute(
+            select(Message)
+            .where(Message.chat == chat_id)
+            .offset(paginator["offset"])
+            .limit(paginator["limit"])
+            .order_by(Message.timestamp.desc()))
+        message = messages.scalars().all()
+        if not message:
+            raise ChatException("detail: No chat history.")
+        return [MessageOut.from_orm(m) for m in message]
