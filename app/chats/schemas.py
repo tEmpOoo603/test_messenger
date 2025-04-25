@@ -3,7 +3,7 @@ from typing import Text, Optional
 from uuid import UUID
 
 from fastapi import HTTPException
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, ConfigDict
 
 from ..database import ChatType, ReadStatus
 
@@ -27,10 +27,8 @@ class ChatOut(BaseModel):
     type: ChatType
     creator_uuid: UUID
     user_uuids: Optional[list[UUID]] = None
-
-    class Config:
-        from_attributes = True
-        use_enum_values = True
+    model_config = ConfigDict(from_attributes=True)
+    model_config['use_enum_values'] = True
 
 
 class CreateMessage(BaseModel):
@@ -46,7 +44,5 @@ class MessageOut(BaseModel):
     text: str
     timestamp: datetime
     read_status: ReadStatus
-
-    class Config:
-        from_attributes = True
-        use_enum_values = True
+    model_config = ConfigDict(from_attributes=True)
+    model_config['use_enum_values'] = True

@@ -74,5 +74,5 @@ class WsService:
     async def unread_messages(self, user_uuid: UUID, websocket: WebSocket) -> None:
         messages = await self.ws_repo.get_unread_messages(user_uuid=user_uuid)
         if messages is not None:
-            data = [MessageOut.from_orm(msg).dict() for msg in messages]
+            data = [MessageOut.model_validate(msg).dict() for msg in messages]
             await websocket.send_json({"action": "unread_messages", "data": jsonable_encoder(data)})

@@ -29,7 +29,7 @@ class WsRepository:
                 [MessageUserRead(user_uuid=user_uuid, message=message.id) for user_uuid in users_uuids if
                  user_uuid != message.sender_uuid])
             await self.db.commit()
-            return MessageOut.from_orm(message)
+            return MessageOut.model_validate(message)
         except Exception as e:
             await self.make_rollback()
             logger.error(f"Exception in {self.create_message.__name__}: {e}")

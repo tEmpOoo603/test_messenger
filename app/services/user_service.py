@@ -18,7 +18,7 @@ class UserService:
         return bool(result)
 
     async def get_other_users_list(self, user_uuid: UUID) -> dict[str, list[PublicUser]]:
-        return {'users': [PublicUser.from_orm(user) for user in
+        return {'users': [PublicUser.model_validate(user) for user in
                           await self.user_repo.get_user_list_without_current(user_uuid=user_uuid)]}
 
 
@@ -30,7 +30,7 @@ class UserService:
             password=hashed_pwd
         )
         saved_user = await self.user_repo.add_new_user(user=user)
-        user_out = UserOut.from_orm(saved_user)
+        user_out = UserOut.model_validate(saved_user)
         return user_out
 
 

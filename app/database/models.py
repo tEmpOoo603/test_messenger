@@ -1,5 +1,7 @@
 from datetime import datetime
 from enum import Enum
+from uuid import uuid4
+
 from sqlalchemy import Enum as SQLEnam, ForeignKey, Integer, Text, func, UUID
 from sqlalchemy.dialects.postgresql import ARRAY, TIMESTAMP
 
@@ -20,7 +22,7 @@ class ReadStatus(Enum):
 
 class User(Base):
     __tablename__ = "users"
-    user_uuid: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=func.uuid_generate_v4())
+    user_uuid: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4())
     name: Mapped[str]
     email: Mapped[str] = mapped_column(unique=True)
     password: Mapped[str]

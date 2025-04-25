@@ -69,4 +69,4 @@ class ChatRepository:
         message = messages.scalars().all()
         if not message:
             raise ChatException("detail: No chat history.")
-        return [MessageOut.model_validate(m) for m in message]
+        return [MessageOut.from_orm(m) for m in message]
