@@ -1,10 +1,8 @@
 from datetime import datetime
-from typing import Text, Optional
+from typing import Optional
 from uuid import UUID
 
-from fastapi import HTTPException
 from pydantic import BaseModel, model_validator, ConfigDict
-
 from ..database import ChatType, ReadStatus
 
 

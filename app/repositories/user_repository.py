@@ -3,10 +3,9 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..exceptions import UserException
-from ..exceptions import logger
-from ..users.schemas import PublicUser
-from app.database import User
+from ..exceptions import UserException, logger
+from ..users import PublicUser
+from ..database import User
 
 
 class UserRepository:

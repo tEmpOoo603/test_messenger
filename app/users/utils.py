@@ -4,12 +4,8 @@ import bcrypt
 import jwt
 from datetime import datetime, timedelta
 
-from fastapi import HTTPException
-from starlette import status
-
 from ..config import settings
-from ..exceptions import UserException
-from ..exceptions import logger
+from ..exceptions import UserException, logger
 
 
 def hash_password(password: str) -> str:
@@ -29,6 +25,7 @@ def create_access_token(data: dict) -> str:
     except Exception as e:
         logger.error(f"Exception in {create_access_token.__name__}: {e}")
         raise
+
 
 async def get_user_uuid_from_token(token: str = None) -> UUID:
     try:

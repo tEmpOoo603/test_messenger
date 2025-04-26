@@ -17,6 +17,7 @@ class WSException(Exception):
 class ChatException(Exception):
     pass
 
+
 def register_exception_handler(app: FastAPI):
     @app.exception_handler(UserException)
     async def handle_user_exception(request, exc: UserException):

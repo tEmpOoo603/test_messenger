@@ -4,14 +4,11 @@ from uuid import UUID
 from fastapi.encoders import jsonable_encoder
 from starlette.websockets import WebSocket
 
-from app.chats import CreateChat
-from app.chats.schemas import ChatOut, CreateMessage, MessageOut
-from app.database import Message
-from app.database.models import MessageUserRead, ReadStatus
-from app.exceptions import WSException
-from app.repositories.chat_repository import ChatRepository
-from app.repositories.ws_repository import WsRepository
-from app.websocket.connection_manager import connection_manager
+from ..chats import CreateChat, ChatOut, CreateMessage, MessageOut
+from ..database import Message, MessageUserRead, ReadStatus
+from ..exceptions import WSException
+from ..repositories import ChatRepository, WsRepository
+from ..websocket.connection_manager import connection_manager
 
 
 class WsService:
@@ -68,7 +65,8 @@ class WsService:
         if len(updated) == 0:
             raise WSException("No message to read or already read.")
 
-        readen_message_ids: list[int] = await self.ws_repo.check_messages_read(message_ids=[message.message for message in updated])
+        readen_message_ids: list[int] = await self.ws_repo.check_messages_read(
+            message_ids=[message.message for message in updated])
         if readen_message_ids:
             updated: Sequence[Message] = await self.ws_repo.mark_mes_read(messages_ids=readen_message_ids)
             if len(updated) > 0:

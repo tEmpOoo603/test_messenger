@@ -1,17 +1,12 @@
 from typing import Sequence
 from uuid import UUID
 
-from sqlalchemy import select, update, func, and_, case
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError, NoResultFound
+from sqlalchemy import select, update, func, case
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.testing import db
 
-from app.chats import CreateChat
-from app.chats.schemas import ChatOut, CreateMessage, MessageOut
-from app.database import Chat, UserChat, Message
-from app.database.models import MessageUserRead, ReadStatus
-from app.exceptions import WSException
-from app.exceptions import logger
+from ..chats import MessageOut
+from ..database import Message, MessageUserRead, ReadStatus
+from ..exceptions import WSException, logger
 
 
 class WsRepository:

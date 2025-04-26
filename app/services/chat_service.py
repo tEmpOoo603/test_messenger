@@ -1,9 +1,8 @@
 from uuid import UUID
 
-from app.chats import CreateChat
-from app.chats.schemas import ChatOut, MessageOut
-from app.exceptions import ChatException
-from app.repositories.chat_repository import ChatRepository
+from ..chats import MessageOut
+from ..exceptions import ChatException
+from ..repositories import ChatRepository
 
 
 class ChatService:

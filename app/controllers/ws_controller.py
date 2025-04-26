@@ -6,20 +6,20 @@ from fastapi import APIRouter, Depends
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from pydantic import ValidationError
-from app.dependencies import create_ws_service, get_uuid_ws
-from app.exceptions import WSException, ChatException, UserException
-from app.exceptions import logger
-from app.services.ws_service import WsService
-from app.websocket.connection_manager import connection_manager
-from app.websocket.handler import registry
+from ..dependencies import create_ws_service, get_uuid_ws
+from ..exceptions import WSException, ChatException, UserException, logger
+from ..services import WsService
+from ..websocket.connection_manager import connection_manager
+from ..websocket.handler import registry
 
 ws_router = APIRouter(tags=["WebSocket"])
 
+
 @ws_router.websocket("/connect")
 async def connect(
-    websocket: WebSocket,
-    user_uuid: UUID = Depends(get_uuid_ws),
-    ws_service: WsService = Depends(create_ws_service),
+        websocket: WebSocket,
+        user_uuid: UUID = Depends(get_uuid_ws),
+        ws_service: WsService = Depends(create_ws_service),
 ):
     await websocket.accept()
     connection_manager.connect(user_uuid, websocket)

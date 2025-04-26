@@ -2,9 +2,9 @@ from uuid import UUID
 
 from fastapi import Depends, APIRouter
 
-from app.chats.pagination import chat_paginator
-from app.dependencies import get_uuid_request, create_chat_service
-from app.exceptions import logger, ChatException
+from ..chats import chat_paginator
+from ..dependencies import get_uuid_request, create_chat_service
+from ..exceptions import logger, ChatException
 
 chat_router = APIRouter()
 

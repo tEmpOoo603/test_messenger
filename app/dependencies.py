@@ -4,14 +4,10 @@ from uuid import UUID
 from starlette.requests import Request
 from starlette.websockets import WebSocket
 
-from app.repositories.chat_repository import ChatRepository
-from app.repositories.user_repository import UserRepository
-from app.repositories.ws_repository import WsRepository
-from app.services.chat_service import ChatService
-from app.services.user_service import UserService
-from app.services.ws_service import WsService
-from app.users.utils import get_user_uuid_from_token
-from app.database.database import DBSession
+from app.repositories import ChatRepository, WsRepository, UserRepository
+from app.services import ChatService, WsService, UserService
+from app.users import get_user_uuid_from_token
+from app.database import DBSession
 
 async def create_user_service(DBSession: DBSession) -> UserService:
     user_repo = UserRepository(db=DBSession)

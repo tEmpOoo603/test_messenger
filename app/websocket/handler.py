@@ -5,9 +5,8 @@ from fastapi.encoders import jsonable_encoder
 
 from starlette.websockets import WebSocket
 
-from app.chats import CreateChat
-from app.chats.schemas import CreateMessage
-from app.services.ws_service import WsService
+from ..chats import CreateChat, CreateMessage
+from ..services import WsService
 
 HandlerType = Callable[[UUID, dict, WebSocket, WsService], Awaitable[None]]
 

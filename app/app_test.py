@@ -5,8 +5,8 @@ from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from starlette.testclient import TestClient
 
-from app.database import Base, get_db_session
-from app.main import app
+from .database import Base, get_db_session
+from .main import app
 import pytest
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -20,10 +20,12 @@ async def async_client():
     async with AsyncClient(transport=ASGITransport(app), base_url="http://127.0.0.1") as client:
         yield client
 
+
 @pytest.fixture(scope="session", autouse=True)
 def set_testing_env():
     os.environ["TESTING"] = "1"
     yield
+
 
 @pytest_asyncio.fixture(autouse=True)
 async def override_get_db():
@@ -122,6 +124,7 @@ def test_ws_create_chat():
             response = websocket.receive_json()
             assert response["action"] == "create_chat"
             assert response["data"]['id'] == 1
+
 
 def test_ws_send_message():
     with TestClient(app) as client1:

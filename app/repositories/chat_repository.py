@@ -1,15 +1,11 @@
 from uuid import UUID
 
-from fastapi import Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.chats import CreateChat
-from app.chats.schemas import ChatOut, MessageOut
-from app.database import UserChat, Chat, Message
-from app.exceptions import ChatException
-from ..chats.pagination import chat_paginator
-from ..exceptions import logger
+from ..chats import CreateChat, ChatOut, MessageOut
+from ..database import UserChat, Chat, Message
+from ..exceptions import ChatException, logger
 
 
 class ChatRepository:

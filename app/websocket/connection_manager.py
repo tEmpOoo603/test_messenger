@@ -20,4 +20,5 @@ class ConnectionManager:
     def is_user_online(self, user_uuid: UUID) -> bool:
         return user_uuid in self.active_connections
 
+
 connection_manager = ConnectionManager()

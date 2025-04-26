@@ -1,15 +1,22 @@
 from uuid import UUID
 
-from app.repositories.user_repository import UserRepository
+from ..repositories import UserRepository
 from ..database import User
 from ..exceptions import UserException
-from ..users.schemas import PublicUser, UserOut, UserCreate, LoginData, Token
-from ..users.utils import hash_password, verify_password, create_access_token
+from ..users import (PublicUser,
+                     UserOut,
+                     UserCreate,
+                     LoginData,
+                     Token,
+                     hash_password,
+                     verify_password,
+                     create_access_token)
 
 
 class UserService:
     def __init__(self, user_repo: UserRepository):
         self.user_repo = user_repo
+
     async def make_rollback(self):
         await self.user_repo.make_rollback()
 
@@ -21,7 +28,6 @@ class UserService:
         return {'users': [PublicUser.model_validate(user) for user in
                           await self.user_repo.get_user_list_without_current(user_uuid=user_uuid)]}
 
-
     async def register_user(self, user_data: UserCreate) -> UserOut:
         hashed_pwd = hash_password(user_data.password)
         user = User(
@@ -32,7 +38,6 @@ class UserService:
         saved_user = await self.user_repo.add_new_user(user=user)
         user_out = UserOut.model_validate(saved_user)
         return user_out
-
 
     async def login_user(self, data: LoginData) -> Token:
         user = await self.user_repo.get_user_by_email(data.email)

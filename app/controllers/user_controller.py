@@ -3,8 +3,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 
 from ..dependencies import create_user_service, get_uuid_request
-from ..services.user_service import UserService
-from ..users.schemas import UserOut, UserCreate, LoginData, Token
+from ..services import UserService
+from ..users import UserOut, UserCreate, LoginData, Token
 
 users_router = APIRouter()
 
