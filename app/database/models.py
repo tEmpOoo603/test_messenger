@@ -22,7 +22,7 @@ class ReadStatus(Enum):
 
 class User(Base):
     __tablename__ = "users"
-    user_uuid: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4())
+    user_uuid: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=lambda: uuid4())
     name: Mapped[str]
     email: Mapped[str] = mapped_column(unique=True)
     password: Mapped[str]
@@ -39,13 +39,13 @@ class Chat(Base):
 class UserChat(Base):
     __tablename__ = "user_chats"
     user_uuid: Mapped[UUID] = mapped_column(ForeignKey("users.user_uuid", ondelete="CASCADE"), primary_key=True, index=True)
-    chat: Mapped[int] = mapped_column(ForeignKey("chats.id", ondelete="CASCADE"), primary_key=True)
+    chat_id: Mapped[int] = mapped_column(ForeignKey("chats.id", ondelete="CASCADE"), primary_key=True)
 
 
 class Message(Base):
     __tablename__ = "messages"
     id: Mapped[int] = mapped_column(primary_key=True)
-    chat: Mapped[int] = mapped_column(ForeignKey("chats.id"), index=True)
+    chat_id: Mapped[int] = mapped_column(ForeignKey("chats.id"), index=True)
     sender_uuid: Mapped[UUID] = mapped_column(ForeignKey("users.user_uuid"))
     text: Mapped[str] = mapped_column(Text)
     timestamp: Mapped[datetime] = mapped_column(TIMESTAMP, server_default=func.now(), nullable=False)

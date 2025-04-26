@@ -116,7 +116,7 @@ Authorization: Bearer <токен>
 ```json
 {
   "action": "send_message",
-  "chat": "chat_id",
+  "chat_id": "chat_id",
   "text": "string"
 }
 ```
@@ -147,7 +147,7 @@ Authorization: Bearer <токен>
   "data": [
     {
       "id": 123,
-      "chat": 456,
+      "chat_id": 456,
       "sender_uuid": "string",
       "text": "string",
       "timestamp": "2024-01-01T00:00:00",

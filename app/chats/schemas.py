@@ -32,14 +32,14 @@ class ChatOut(BaseModel):
 
 
 class CreateMessage(BaseModel):
-    chat: int
+    chat_id: int
     text: str
     sender_uuid: UUID = None
 
 
 class MessageOut(BaseModel):
     id: int
-    chat: int
+    chat_id: int
     sender_uuid: UUID
     text: str
     timestamp: datetime

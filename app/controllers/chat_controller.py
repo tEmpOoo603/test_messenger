@@ -16,7 +16,8 @@ async def get_chat_history(
         chat_service=Depends(create_chat_service),
         paginator=Depends(chat_paginator)):
     try:
-        return await chat_service.get_chat_history(chat_id=chat_id, user_uuid=user_uuid, paginator=paginator)
+        messages = await chat_service.get_chat_history(chat_id=chat_id, user_uuid=user_uuid, paginator=paginator)
+        return {"messages": messages}
 
     except ChatException as e:
         return {"detail": str(e)}

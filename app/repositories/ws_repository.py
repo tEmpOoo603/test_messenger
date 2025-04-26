@@ -1,7 +1,7 @@
 from typing import Sequence
 from uuid import UUID
 
-from sqlalchemy import select, update, func, and_
+from sqlalchemy import select, update, func, and_, case
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.testing import db
@@ -62,7 +62,7 @@ class WsRepository:
                 select(MessageUserRead.message)
                 .where(MessageUserRead.message.in_(message_ids))
                 .group_by(MessageUserRead.message)
-                .having(func.bool_and(MessageUserRead.status == ReadStatus.READ))
+                .having(func.sum(case((MessageUserRead.status == ReadStatus.UNREAD, 1), else_=0)) == 0)
             )
             result = await self.db.execute(stmt)
 
@@ -97,7 +97,7 @@ class WsRepository:
             logger.error(f"Exception in {self.get_unread_messages.__name__}: {e}")
             raise WSException("Can't get unread messages.")
 
-    async def mark_mes_read(self, messages_ids: list[int]):
+    async def mark_mes_read(self, messages_ids: list[int]) -> Sequence[Message]:
         try:
             updated = await self.db.execute(
                 update(Message)
@@ -105,9 +105,10 @@ class WsRepository:
                     Message.id.in_(messages_ids),
                     Message.read_status == ReadStatus.UNREAD)
                 .values(read_status=ReadStatus.READ)
+                .returning(Message)
             )
             await self.db.commit()
-            return updated.rowcount
+            return updated.scalars().all()
         except Exception as e:
             await self.make_rollback()
             logger.error(f"Exception in {self.mark_mes_read.__name__}: {e}")

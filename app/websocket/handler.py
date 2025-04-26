@@ -2,12 +2,11 @@ from typing import Callable, Awaitable, Dict
 from uuid import UUID
 
 from fastapi.encoders import jsonable_encoder
-from pydantic import ValidationError
+
 from starlette.websockets import WebSocket
 
 from app.chats import CreateChat
 from app.chats.schemas import CreateMessage
-from app.exceptions import ChatException, UserException, WSException, logger
 from app.services.ws_service import WsService
 
 HandlerType = Callable[[UUID, dict, WebSocket, WsService], Awaitable[None]]
@@ -30,16 +29,9 @@ async def ws_create_chat(
         ws: WebSocket,
         ws_service: WsService
 ):
-    try:
-        chat_data = CreateChat(**payload).copy(update={"creator_uuid": user_uuid})
-        new_chat = await ws_service.create_chat(chat_data=chat_data)
-        await ws.send_json({"action": "create_chat", "data": new_chat.model_dump(mode="json")})
-
-    except ValidationError as e:
-        await ws.send_json({"detail": f"Incorrect chat parameters. Error: {str(e)}"})
-    except Exception as e:
-        logger.error(f"Exception in {ws_create_chat.__name__}: {str(e)}")
-        await ws.send_json({"detail": "Failed to create chat."})
+    chat_data = CreateChat(**payload).model_copy(update={"creator_uuid": user_uuid})
+    new_chat = await ws_service.create_chat(chat_data=chat_data)
+    await ws.send_json({"action": "create_chat", "data": new_chat.model_dump(mode="json")})
 
 
 @register_action("send_message")
@@ -49,19 +41,9 @@ async def ws_send_message(
         ws: WebSocket,
         ws_service: WsService
 ):
-    try:
-        message = CreateMessage(**payload).copy(update={"sender_uuid": user_uuid})
-        message_data = await ws_service.create_message(message=message)
-        await ws.send_json({"action": "message", "data": jsonable_encoder(message_data)})
-
-    except ValidationError:
-        await ws.send_json({"detail": f"Incorrect message parameters."})
-
-    except WSException as e:
-        await ws.send_json({"detail": str(e)})
-
-    except Exception:
-        await ws.send_json({"detail": "Failed to send message."})
+    message = CreateMessage(**payload).copy(update={"sender_uuid": user_uuid})
+    message_data = await ws_service.create_message(message=message)
+    await ws.send_json({"action": "message", "data": jsonable_encoder(message_data)})
 
 
 @register_action("mark_read")
@@ -71,8 +53,6 @@ async def ws_mark_read(
         ws: WebSocket,
         ws_service: WsService
 ):
-    try:
-        message_ids: list[int] = payload.get("message_ids")
-        await ws_service.mark_read(message_ids=message_ids, user_uuid=user_uuid)
-    except (WSException, UserException, ChatException) as e:
-        await ws.send_json({"detail": str(e)})
+    message_ids: list[int] = payload.get("message_ids")
+    readen_message_ids: list[int] = await ws_service.mark_read(message_ids=message_ids, user_uuid=user_uuid)
+    await ws.send_json({"action": "readed", "data": {"message_ids": readen_message_ids}})
