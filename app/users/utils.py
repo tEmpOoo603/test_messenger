@@ -21,7 +21,7 @@ def create_access_token(data: dict) -> str:
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + timedelta(minutes=60)
         to_encode.update({"exp": expire})
-        return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+        return jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.ALGORITHM)
     except Exception as e:
         logger.error(f"Exception in {create_access_token.__name__}: {e}")
         raise
@@ -36,7 +36,7 @@ async def get_user_uuid_from_token(token: str = None) -> UUID:
         if len(token) != 2 or token[0] != "Bearer":
             raise UserException("Invalid Bearer token")
         token = token[1]
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.ALGORITHM])
         user_uuid = payload.get("sub")
         if user_uuid is None:
             raise UserException("Invalid token")

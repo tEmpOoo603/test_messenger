@@ -17,18 +17,16 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 #Путь для root
 ENV PATH="/root/.local/bin:$PATH"
 
-WORKDIR /app
+WORKDIR /base
 
 # Копируем файлы, начинающиеся на poetry.lock
-COPY pyproject.toml poetry.lock* /app/
+COPY pyproject.toml poetry.lock* /base/
 
 RUN poetry config virtualenvs.create false \
     && poetry install --no-root --only main
 
-COPY alembic.ini /app/alembic
+COPY app /base/app
+COPY mango_test /base/mango_test
+COPY alembic.ini /base/
+COPY wait_for_db.sh /base/wait_for_db.sh
 
-COPY ./migrations /app/migrations
-
-COPY . /app
-
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
