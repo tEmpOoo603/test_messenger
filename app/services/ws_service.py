@@ -40,7 +40,7 @@ class WsService:
         elif await self.chat_repo.is_user_in_chat(message.sender_uuid, message.chat_id) is False:
             raise WSException("User not in chat.")
 
-        message = Message(**message.dict())
+        message = Message(**message.model_dump())
 
         users_uuids: list[UUID] = await self.chat_repo.get_chat_users(message.chat_id)
         created_message = await self.ws_repo.create_message(message=message, users_uuids=users_uuids)

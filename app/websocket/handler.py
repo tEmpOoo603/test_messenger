@@ -40,7 +40,7 @@ async def ws_send_message(
         ws: WebSocket,
         ws_service: WsService
 ):
-    message = CreateMessage(**payload).copy(update={"sender_uuid": user_uuid})
+    message = CreateMessage(**payload).model_copy(update={"sender_uuid": user_uuid})
     message_data = await ws_service.create_message(message=message)
     await ws.send_json({"action": "message", "data": jsonable_encoder(message_data)})
 
